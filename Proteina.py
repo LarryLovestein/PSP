@@ -75,7 +75,7 @@ class Proteina():
     def Fitness(self):
         istoric=list()
         count=0
-        for i in range(len(self.matrice)):
+        for i in range(len(self.matrice)-1):
             if self.amino[i]=="H":
                 u = self.matrice[i].copy()
                 d = self.matrice[i].copy()
@@ -85,30 +85,26 @@ class Proteina():
                 d[1] = d[1] - 1
                 l[0] = l[0] - 1
                 r[0] = r[0] + 1
-                if (u in self.matrice and u not in istoric and self.amino[self.matrice.index(u)]=="H"):
+                if (u in self.matrice and u not in istoric and self.amino[self.matrice.index(u)]=="H" and ( u not in [self.matrice[i-1],self.matrice[i+1]])):
                     count-=1
                     istoric.append(self.matrice[i])
-                if (d in self.matrice and d not in istoric and self.amino[self.matrice.index(d)]=="H"):
+                if (d in self.matrice and d not in istoric and self.amino[self.matrice.index(d)]=="H" and ( d not in [self.matrice[i-1],self.matrice[i+1]])):
                     count-=1
                     istoric.append(self.matrice[i])
-                if (l in self.matrice and l not in istoric and self.amino[self.matrice.index(l)]=="H"):
+                if (l in self.matrice and l not in istoric and self.amino[self.matrice.index(l)]=="H" and ( l not in [self.matrice[i-1],self.matrice[i+1]])):
                     count-=1
                     istoric.append(self.matrice[i])
-                if (r in self.matrice and r not in istoric and self.amino[self.matrice.index(r)]=="H"):
+                if (r in self.matrice and r not in istoric and self.amino[self.matrice.index(r)]=="H" and ( r not in [self.matrice[i-1],self.matrice[i+1]])):
                     count-=1
                     istoric.append(self.matrice[i])
         self.fitness=count
 
 
 
+'''
+amino=citireAmino()
+pr=Proteina(len(amino[0]),amino[0])
+pr.Fitness()
+pr.plotMatrice()
+print(pr)'''
 
-
-'''amino=citireAmino()
-for i in range(10):
-    pr=Proteina(len(amino[5]),amino[5])
-    pr.Fitness()
-    if i==3:
-        pr.plotMatrice()
-    print(" ")
-    print(len(pr.matrice))
-    print(len(pr.structura))'''

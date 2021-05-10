@@ -4,3 +4,24 @@ P P H P P H H P P P P H H P P P P H H P P P P H H
 P P P H H P P H H P P P P P H H H H H H H P P H H P P P P H H P P H P P
 P P H P P H H P P H H P P P P P H H H H H H H H H H P P P P P P H H P P H H P P H P P H H H H H
 H H P H P H P H P H H H H P H P P P H P P P H P P P P H P P P H P P P H P H H H H P H P H P H P H H
+
+
+
+def GeneticAlg(dimPop,amino,nrGeneratii):
+    popor=Population(amino)
+    popor.generarePop(dimPop)
+    popor.detFitnessPop()
+    print(popor)
+    i=0
+    while i < nrGeneratii:
+        kids=copy.copy(popor.genKids(dimPop,10,10,0.01,0.99))
+        print(kids)
+        mutation=copy.copy(popor.genMutation(dimPop,10,10,0.01,0.99))
+        print(mutation)
+        allPeople=kids+mutation+copy.copy(popor.pop)
+        print(len(allPeople))
+        popor.pop=popor.selection(allPeople).copy()
+        print(popor.pop[0])
+        print("iteratia")
+        i+=1
+    return popor.pop

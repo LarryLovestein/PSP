@@ -1,9 +1,10 @@
 from Proteina import *
 
 from logic import *
-def detStructura(matrice):
+from fuzzywuzzy import fuzz
+def detStructura( matrice ):
     structura=list()
-    i=0
+    i = 0
     while len(structura)<len(matrice)-1:
         i=len(structura)
         curent=matrice[i].copy()
@@ -18,7 +19,6 @@ def detStructura(matrice):
             structura.append("D")
 
     return structura
-
 def repozitionareZero(matrice):
     x=0-matrice[0][0]
     y=0-matrice[0][1]
@@ -48,8 +48,8 @@ class Population(Proteina):
         #point=5
         m1=p1.getMatrice()[:point+1]
         p1.setMatrice(m1)
-        m1 = p1.getStructura()[:point]
-        m2 = p2.getStructura()[point:]
+        m1 = p1.getStructura()[:point].copy()
+        m2 = p2.getStructura()[point:].copy()
         m1=m1+m2
         p1.setStructura(m1)
         i=point-1
@@ -57,10 +57,12 @@ class Population(Proteina):
 
         positii = ["U", "D", "L", "R"]
         while len(p1.getMatrice())<len(p2.getMatrice()):
+            #print(p1.getMatrice())
+            #print(len(p1.getMatrice()))
             i=len(p1.getMatrice())-1
             curentP=p1.getMatrice()[i].copy()
             if p1.getStructura()[i] == "U":
-                curentP[1]=curentP[1] + 1
+                curentP[1] = curentP[1] + 1
             if p1.getStructura()[i] == "D":
                 curentP[1] = curentP[1] - 1
             if p1.getStructura()[i] == "R":
@@ -71,6 +73,10 @@ class Population(Proteina):
                 p1.getMatrice().append(curentP)
             else:
                 curentP=p1.getMatrice()[i].copy()
+                u = curentP.copy()
+                d = curentP.copy()
+                l = curentP.copy()
+                r = curentP.copy()
                 k = random.randint(0, len(positii) - 1)
                 if (positii[k] == "U"):
                     curentP[1]=curentP[1] + 1
@@ -82,16 +88,15 @@ class Population(Proteina):
                     curentP[0] = curentP[0] + 1
                 if curentP not in p1.getMatrice():
                     p1.getMatrice().append(curentP)
-                u = curentP.copy()
-                d = curentP.copy()
-                l = curentP.copy()
-                r = curentP.copy()
+               # print(p1.getMatrice())
                 u[1] = u[1] + 1
                 d[1] = d[1] - 1
                 l[0] = l[0] - 1
                 r[0] = r[0] + 1
+                #print(u,l,d,r)
                 if l in p1.getMatrice() and u in p1.getMatrice() and r in p1.getMatrice() and d in p1.getMatrice():
-                    p1.getMatrice()[:] = p1.getMatrice()[:point]
+                    return p2
+
         return p1
 
 
@@ -117,8 +122,7 @@ class Population(Proteina):
         histo1=b1.copy()
         histo=b.copy()
         C=detC(current,next,L)
-       # print(C)
-       # print(L)
+
         if C[0]==prev[0] and C[1]==prev[1]:
             p.getMatrice()[point]=L
 
@@ -126,18 +130,15 @@ class Population(Proteina):
             p.getMatrice()[point] = L
             p.getMatrice()[point - 1] = C
             p.getMatrice()[:point - 1] = histo
-        #print(point)
-        #print(histo)
-        #repozitionareZero(p.getMatrice())  # comenteaza asta daca nu merge SA-ul
+
         p.setStructura(detStructura(p.getMatrice()))
-       # print(len(p.getMatrice()))
-       # p.plotMatrice()
+
         return p
 
     def SaMutation(self,nrIter,T,minT,alpha):
         a=random.randint(0,len(self.pop)-1)
         p = copy.copy(self.pop[a])  # see selecteaza un individ random din pop
-        #print(p)
+
         bestP = copy.copy(p)
         while T > minT:
             j = 0
@@ -148,7 +149,7 @@ class Population(Proteina):
                 delta = x.getFitness() - bestP.getFitness() # daca x mai bun inseamna ca e negativ delta
                 if delta < 0:
                     bestP=copy.copy(x)
-                elif random.uniform(0,1) < math.exp(delta/T):
+                elif random.uniform(0,1) < math.exp(-delta/T):
                     bestP=copy.copy(x)
                 j += 1
             T = alpha * T
@@ -173,40 +174,77 @@ class Population(Proteina):
                 j += 1
             T = alpha * T
         return bestP
+
     def genKids(self,n,nrIter, T, minT, alpha):
-        a=random.sample(range(0,len(self.pop)-1), 2) # aici e problema daca imi da ceva greist la gen kids
         kids=list()
+        a = random.sample(range(0, len(self.pop) - 1), 2)  # aici e problema daca imi da ceva greist la gen kids
         while len(kids) < n:
-            k=self.SaCrossover(nrIter,T,minT,alpha,int(a[0]),int(a[1]))
+            k = copy.copy(self.SaCrossover(nrIter,T,minT,alpha,int(a[0]),int(a[1])))
             kids.append(k)
-            print(len(kids))
+
         return kids
 
     def genMutation(self, n, nrIter, T, minT, alpha):
         mutation = list()
         while len(mutation) < n:
-            k = self.SaMutation(nrIter, T, minT, alpha)
+            k = copy.copy(self.SaMutation(nrIter, T, minT, alpha))
             mutation.append(k)
-            print(len(mutation))
+
         return mutation
 
-    
+
+
+    def selection(self,allPop):
+        newPop=list()
+        allPop.sort(key=lambda x: x.getFitness(), reverse=False)
+        newPop.append(allPop[0])
+
+        for i in allPop:
+            avgSimilarity=0
+            for j in newPop:
+                avgSimilarity+=fuzz.ratio(i.getStructura(),j.getStructura())
+            if avgSimilarity/(len(newPop))<60:
+                newPop.append(i)
+        while len(newPop) < len(self.pop):
+            k = copy.copy(self.SaMutation(10, 10, 0.01,0.99))#se pot schimba astea
+            newPop.append(k)
+        return newPop
+
+
+
+def GeneticAlg(dimPop,amino,nrGeneratii):
+    popor=Population(amino)
+    popor.generarePop(dimPop)
+    i=0
+    while i < nrGeneratii:
+        kids=copy.copy(popor.genKids(dimPop,10,100,0.01,0.99))
+        mutation=copy.copy(popor.genMutation(dimPop,10,100,0.01,0.99))
+        copie=copy.copy(popor.pop)
+        allPeople=copy.copy(kids+mutation+copie)
+        popor.pop=copy.copy(popor.selection(allPeople))
+        popor.detFitnessPop()
+        print(popor.pop[0])
+        popor.pop[0].plotMatrice()
+        print("iteratia:",i)
+        i+=1
+    return popor.pop
+
+
+
+
+
+
 
 
 amino=citireAmino()
-popor=Population(amino[0])
-popor.generarePop(10)
-pr=popor.genMutation(10,10,10,0.001,0.999)
-print(len(pr))
-'''
-amino=citireAmino()
-popor=Population(amino[0])
-popor.generarePop(10)
-popor.detFitnessPop()
-popor.pop[0].plotMatrice()
-pr=popor.SaCrossover(10,10,0.001,0.999,1,2)
-pr.plotMatrice()
+popor=GeneticAlg(5,amino[0],5)
+
+popor.sort(key=lambda x: x.getFitness(), reverse=False)
+pr=popor[0]
+
 print(pr)
-'''
+pr.plotMatrice()
+for i in popor:
+    print(i.getFitness())
 
-    #def crossOver(self):
+
